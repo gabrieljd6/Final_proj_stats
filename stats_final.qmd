@@ -1,0 +1,94 @@
+---
+title: "stats_final"
+format: html
+---
+
+## Research Questions
+1. Has the air quality (Nitrogen Dioxide levels) changed between Winter and Summer seasons?
+2. Are there differences in Nitrogen Dioxide levels between selected neighborhoods in NYC?
+
+
+```{r echo=FALSE}
+#| message: false
+#| warning: false
+# Load libraries
+library(tidyverse)
+library(janitor)
+
+# Load data
+air_quality <- read_csv("data/Air_Quality.csv") %>%
+  clean_names() # fixes column names to lowercase + underscores
+
+# Filter NO2 and create Season column
+no2_data <- air_quality %>%
+  filter(name == "Nitrogen dioxide (NO2)") %>%
+  mutate(
+    season = case_when(
+      str_detect(time_period, "Winter") ~ "Winter",
+      str_detect(time_period, "Summer") ~ "Summer",
+      TRUE ~ "Other"
+    )
+  ) %>%
+  filter(season != "Other")
+
+```
+
+
+```{r echo=FALSE}
+#| message: false
+#| warning: false
+
+ggplot(no2_data, aes(x = data_value)) +
+  geom_histogram(binwidth = 2, fill = "skyblue", color = "black", na.rm = TRUE) +
+  labs(title = "Distribution of NO₂ Levels", x = "NO₂ Level (ppb)", y = "Frequency") +
+  theme_minimal()
+
+
+```
+
+```{r echo=FALSE}
+#| message: false
+#| warning: false
+# Boxplot of NO2 Levels by Season
+ggplot(no2_data, aes(x = season, y = data_value, fill = season)) +
+  geom_boxplot() +
+  labs(
+    title = "NO₂ Levels by Season",
+    x = "Season",
+    y = "NO₂ Level (ppb)"
+  ) +
+  theme_minimal()
+
+
+```
+
+```{r echo=FALSE}
+#| message: false
+#| warning: false
+# Summary statistics by Season
+no2_data %>%
+  group_by(season) %>%
+  summarise(
+    mean_NO2 = mean(data_value, na.rm = TRUE),
+    sd_NO2 = sd(data_value, na.rm = TRUE),
+    min_NO2 = min(data_value, na.rm = TRUE),
+    max_NO2 = max(data_value, na.rm = TRUE)
+  )
+
+
+# Two-sample t-test comparing Winter and Summer NO2 levels
+t_test_result <- t.test(data_value ~ season, data = no2_data)
+
+# Print the results
+t_test_result
+
+
+```
+
+
+
+## Conclusion
+
+In this project, I analyzed air quality data from New York City, specifically focusing on Nitrogen Dioxide (NO₂) levels. The two research questions I explored were: (1) Has air quality changed between Winter and Summer seasons? and (2) Are there differences in NO₂ levels between selected neighborhoods? To address these questions, I conducted a descriptive analysis by creating a histogram of NO₂ levels and a boxplot comparing NO₂ levels across seasons. I also calculated summary statistics (mean, standard deviation, minimum, and maximum) for Winter and Summer seasons. To test for differences, I performed a two-sample t-test comparing NO₂ levels between Winter and Summer.
+
+The results of the descriptive analysis suggested that there may be differences in air quality between seasons. The histogram showed the distribution of NO₂ levels, and the boxplot indicated that one season tended to have higher levels. The two-sample t-test yielded a p-value of 2.2e-16, indicating that there was a statistically significant difference between Winter and Summer NO₂ levels. Overall, the analysis suggests that seasonality has an impact on air quality in New York City, with Winter typically showing higher NO₂ concentrations.
